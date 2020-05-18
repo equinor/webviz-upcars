@@ -15,11 +15,11 @@ import io
 import zipfile
 import base64
 import traceback
-from _upcars_udf import *
 import dash
 from dash.exceptions import PreventUpdate
 from random import random
 import numpy as np
+from ._upcars_udf import *
 
 
 def warning(message):

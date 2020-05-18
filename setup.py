@@ -14,6 +14,9 @@ setup(
     packages=find_packages(exclude=["tests"]),
     entry_points={
         "webviz_config_plugins": [
+            "UpCaRsParameterDistribution = webviz_upcars.plugins:UpCaRsParameterDistribution",
+            "UpCaRsSimulationProfile = webviz_upcars.plugins:UpCaRsSimulationProfile",
+            "UpCaRsCovan = webviz_upcars.plugins:UpCaRsCovan",
             "SomeCustomPlugin = webviz_upcars.plugins:SomeCustomPlugin",
             "SomeOtherCustomPlugin = webviz_upcars.plugins:SomeOtherCustomPlugin",
         ]

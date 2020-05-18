@@ -10,7 +10,7 @@ import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
 
-from _upcars_udf import palette
+from ._upcars_udf import palette
 
 
 class UpCaRsCovan(WebvizPluginABC):

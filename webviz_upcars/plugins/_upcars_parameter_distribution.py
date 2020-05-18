@@ -9,7 +9,7 @@ from webviz_config.common_cache import CACHE
 from webviz_config.webviz_store import webvizstore
 import plotly.graph_objs as go
 
-# from ._upcars_udf import palette, load_parameters
+from ._upcars_udf import palette, load_parameters
 
 
 class UpCaRsParameterDistribution(WebvizPluginABC):
