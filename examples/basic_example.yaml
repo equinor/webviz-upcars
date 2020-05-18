@@ -1,0 +1,13 @@
+title: Test of some custom containers
+
+pages:
+
+ - title: Front page
+   content:
+    - This is a `webviz` instance created from a configuration file.   
+ - title: Parameter Distribution
+   content:
+    - webviz_upcars.UpCaRsParameterDistribution:
+      csvfile: ./data/parameters.csv
+      best_realization: [0, 0, 0, 0]          
+
