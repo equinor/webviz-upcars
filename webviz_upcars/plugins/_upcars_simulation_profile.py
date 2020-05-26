@@ -19,6 +19,7 @@ import dash
 from dash.exceptions import PreventUpdate
 from random import random
 import numpy as np
+import os
 from ._upcars_udf import *
 
 
@@ -50,25 +51,36 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
     def __init__(
             self,
             app,
-            x_axis,
-            y_axis,
+            x_axis=None,
+            y_axis=[],
             ensembles=[],
             reference_cases=None,
             column_keys=None,
             krpc_ensembles=None,
-            ensembles_idx=[],
+            ensembles_idx=None,
             krpc_references=None
     ):
         super().__init__()
         # Get setting from shared_settings
         shared_settings = app.webviz_settings["shared_settings"]
-        self.make_uids()
         self.plot_profile = ensembles or reference_cases
         self.plot_krpc = krpc_ensembles or krpc_references
         self.plot_ensembles = ensembles or krpc_ensembles
         self.plot_references = reference_cases or krpc_references
         self.x_axis = x_axis
         self.y_axis = y_axis
+        self.colors = [
+        'rgb(31, 119, 180)',
+        'rgb(255, 127, 14)',
+        'rgb(44, 160, 44)',
+        'rgb(214, 39, 40)',
+        'rgb(148, 103, 189)',
+        'rgb(140, 86, 75)',
+        'rgb(227, 119, 194)',
+        'rgb(127, 127, 127)',
+        'rgb(188, 189, 34)',
+        'rgb(23, 190, 207)',
+    ]
         if not (self.plot_profile or self.plot_krpc):
             raise ValueError(
                 "Nothing to visualize.\nPlease specify at least one Eclipse case or krpc table")
@@ -97,7 +109,6 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                 )
                 self.df_ref = get_summary_df(references_tuple, column_keys)
                 keywords.extend(self.df_ref.columns)
-                #print (self.df_ref.columns)
             # Get all columns
             keywords.remove("REAL")
             keywords.remove("ENSEMBLE")
@@ -128,6 +139,8 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
             if krpc_ensembles:
                 self.df_ens_krpc = get_table_df(
                     shared_settings["krpc_csv_tables"][krpc_ensembles])
+                # Create Iter column based on ENSEMBLE column
+                self.df_ens_krpc['Iter'] = self.df_ens_krpc.apply(lambda row: int(row['ENSEMBLE'][-1]), axis=1)
                 if ensembles_idx is not None:
                     self.df_ens_krpc = self.df_ens_krpc[self.df_ens_krpc['Iter'].isin(
                         ensembles_idx)]
@@ -151,237 +164,187 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
 
             self.satnum_list = []
             self.table_type = []
+            
             if krpc_ensembles:
                 self.satnum_list.extend(self.df_ens_krpc['satnum'].unique())
                 self.table_type.extend(self.df_ens_krpc['type'].unique())
             if krpc_references:
                 self.satnum_list.extend(self.df_ref_krpc['satnum'].unique())
                 self.table_type.extend(self.df_ref_krpc['type'].unique())
-
             self.satnum_list = list(set(self.satnum_list))
             self.table_type = list(set(self.table_type))
+
         else:
             self.satnum_list = [None]
             self.table_type = [None]
 
         self.set_callbacks(app)
 
-    def make_uids(self):
-        self.uid = f'{uuid4()}'
-        self.plot_id = f'plot-{self.uid}'
-        self.figure_id = f'figure-{self.uid}'
-
-        self.x_axis_id = f'keyword-xaxis-{self.uid}'
-        self.y_axis_id = f'keyword-yaxis-{self.uid}'
-
-        self.toggle_axis_id = f'toggle_axis-{self.uid}'
-        self.satnum_id = f'satnum_{self.uid}'
-        self.table_type_id = f'table_type_{self.uid}'
-        self.opacity_id = f'opacity-{self.uid}'
-        self.reset_id = f'reset-{self.uid}'
-        self.reset_flag_id = f'reset-flag-{self.uid}'
-
-        self.visc1_id = f'visc1_{self.uid}'
-        self.visc2_id = f'visc2_{self.uid}'
-
     @property
-    def visc1_input(self):
-        """Input box to specify viscosity of fluid1"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
+    def layout(self):
+        return wcc.FlexBox(
+            id=self.uuid("layout"),
             children=[
-                html.Label("Water/Gas Viscosity"),
-                dcc.Input(
-                    style={'width': '100%'},
-                    id=self.visc1_id,
-                    value=1.0,
-                    type="number",
-                    debounce=True,
-                    placeholder="Water/Gas viscosity"
+                # Hidden object
+                dcc.Store(id=self.uuid("reset_flag")),
+                # Control
+                html.Div(
+                    id=self.uuid("control"),
+                    style={"flex":"1"},
+                    children=[
+                        html.Label(
+                            id=self.uuid("x_axis_selector"),
+                            style={"display":"block" if self.plot_profile else "none"},
+                            children=[
+                                html.Span(
+                                    "X-axis", style={"font-weight":"bold"}
+                                ),
+                                dcc.Dropdown(
+                                    id=self.uuid("x_axis"),
+                                    clearable=False,
+                                    options=self.keywords_options,
+                                    value=self.x_axis
+                                )
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("y_axis_selector"),
+                            style={"display":"block" if self.plot_profile else "none"},
+                            children=[
+                                html.Span(
+                                    "Y-axis", style={"font-weight":"bold"}
+                                ),
+                                dcc.Dropdown(
+                                    id=self.uuid("y_axis"),
+                                    multi=True,
+                                    options=self.keywords_options,
+                                    value=self.y_axis
+                                )
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("satnum_selector"),
+                            style={"display":"block" if self.plot_krpc else "none"},
+                            children=[
+                                html.Span(
+                                    "SATNUM", style={"font-weight": "bold"}
+                                ),
+                                dcc.Dropdown(
+                                    id=self.uuid("satnum"),
+                                    clearable=False,
+                                    options=[{'label': f'{val}', 'value': val}
+                                            for val in self.satnum_list],
+                                    value=self.satnum_list[0],
+                                    disabled=len(self.satnum_list) == 1,
+                                )
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("fluid_selector"),
+                            style={"display":"block" if self.plot_krpc else "none"},
+                            children=[
+                                html.Span(
+                                    "Type", style={"font-weight": "bold"}
+                                ),
+                                dcc.Dropdown(
+                                    id=self.uuid("type"),
+                                    options=[{'label': val, 'value': val} for val in self.table_type],
+                                    value=self.table_type[0],
+                                    clearable=False,
+                                    disabled=len(self.table_type) == 1,
+                                )
+
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("visc1_input"),
+                            style={"display":"block" if self.plot_krpc else "none"},
+                            children=[
+                                html.Span(
+                                    "Water/Gas Viscosity", style={"font-weight": "bold"}
+                                ),
+                                dcc.Input(
+                                    id=self.uuid("visc1"),
+                                    style={'width':'98%'},
+                                    value=1.0,
+                                    type='number',
+                                    debounce=True,
+                                    placeholder="Water/Gas viscosity"
+                                )
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("visc2_input"),
+                            style={"display":"block" if self.plot_krpc else "none"},
+                            children=[
+                                html.Span(
+                                    "Oil Viscosity", style={"font-weight": "bold"}
+                                ),
+                                dcc.Input(
+                                    id=self.uuid("visc2"),
+                                    style={'width':'98%'},
+                                    value=1.0,
+                                    type="number",
+                                    debounce=True,
+                                    placeholder="Oil Viscosity"
+                                )
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("axis_selector"),
+                            style={"display":"block" if self.plot_krpc else "none"},
+                            children=[
+                                html.Span(
+                                    "Rel. Perm Plot", style={"font-weight": "bold"}
+                                ),
+                                dcc.RadioItems(
+                                    id=self.uuid("axis"),
+                                    options=[
+                                        {"label": "Linear", "value": "linear",},
+                                        {"label": "Semi-Log", "value": "log",},
+                                    ],
+                                    value="linear",
+                                    labelStyle={"display": "inline-block"},
+                                ),                                
+                            ]
+                        ),
+                        html.Label(
+                            id=self.uuid("opacity_selector"),
+                            style={"display":"block" if self.plot_ensembles else "none"},
+                            children=[
+                                html.Span(
+                                    "Opacity", style={"font-weight": "bold"}
+                                ),
+                                dcc.Slider(
+                                    id=self.uuid("opacity"),
+                                    min=0.0,
+                                    max=1.0,
+                                    value=0.3,
+                                    step=0.1,
+                                    marks={
+                                        val: {'label': f'{val:.1f}'} for val in [x*0.2 for x in range(6)]
+                                    }
+                                )
+                            ]
+                        ),
+                        html.Button(
+                            'Resets',
+                            id=self.uuid("reset")
+                        ),
+                    ]
                 ),
-            ]
-        )
-
-    @property
-    def visc2_input(self):
-        """Input box to specify viscosity of fluid1"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label("Oil Viscosity"),
-                dcc.Input(
-                    style={'width': '100%'},
-                    value=1.0,
-                    id=self.visc2_id,
-                    type="number",
-                    debounce=True,
-                    placeholder="Oil viscosity"
-                ),
-            ]
-        )
-
-
-    @property
-    def x_axis_selector(self):
-        """Dropdown to select x-axis"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label("X-axis"),
-                dcc.Dropdown(
-                    id=self.x_axis_id,
-                    options=self.keywords_options,
-                    value=self.x_axis,
-                    clearable=False,
-                    style={'height': '39px'},
-                ),
-            ]
-        )
-
-    @property
-    def y_axis_selector(self):
-        """Dropdown to select y-axis"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label('Y-axis'),
-                dcc.Dropdown(
-                    id=self.y_axis_id,
-                    options=self.keywords_options,
-                    multi=True,
-                    value=self.y_axis,
-                    #style={'height': '39px'},
-                ),
-            ]
-        )
-
-    @property
-    def toggle_type(self):
-        """Dropdown to choose fluid combination type"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label("Type"),
-                dcc.Dropdown(
-                    id=self.table_type_id,
-                    options=[{'label': val, 'value': val}
-                             for val in self.table_type],
-                    value=self.table_type[0],
-                    clearable=False,
-                    disabled=len(self.table_type) == 1,
-                    style={'height': '39px'},
-                ),
-            ]
-        )
-
-    @property
-    def toggle_satnum(self):
-        """Dropdown to choose satnum"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label("SATNUM"),
-                dcc.Dropdown(
-                    id=self.satnum_id,
-                    clearable=False,
-                    options=[{'label': f'{val}', 'value': val}
-                             for val in self.satnum_list],
-                    value=self.satnum_list[0],
-                    disabled=len(self.satnum_list) == 1,
-                    style={'height': '39px'},
-                ),
-            ]
-        )
-
-    @property
-    def toggle_axis(self):
-        """Checkbox to toggle axis"""
-        return html.Div(
-            style={"paddingBottom": "5px",
-                   "display": "block" if self.plot_krpc else "none"},
-            children=[
-                html.Label('Options'),
-                dcc.Checklist(
-                    id=self.toggle_axis_id,
-                    options=[
-                        {'label': 'Semilog Relative Permeability', 'value': 'log'}],
-                    value=[],
-                    labelStyle={'display': 'inline-block',
-                                'height': '39px',
-                                },
-                ),
-            ]
-        )
-
-    @property
-    def opacity_selector(self):
-        """Slider to adjust opacity"""
-        return html.Div(
-            style={"paddingBottom": "5px"},
-            children=[
-                html.Label('Opacity'),
-                dcc.Slider(
-                    id=self.opacity_id,
-                    min=0.0,
-                    max=1.0,
-                    step=0.05,
-                    value=0.25,
-                    marks={
-                        val: {'label': f'{val:.1f}'}
-                        for val in [x*0.2 for x in range(6)]
-                    },
+                # Figures
+                html.Div(
+                    id=self.uuid("plot"),
+                    style={"flex":"4"},
+                    children=[
+                        wcc.Graph(
+                            id=self.uuid("figure")
+                        )
+                    ]
                 )
             ]
         )
-
-    @property
-    def reset_button(self):
-        """Buton to reset selection"""
-        return html.Div(
-            children=[
-                html.Button('Reset',
-                            id=self.reset_id,
-                            )
-            ]
-        )
-
-    @property
-    def layout(self):
-        if self.plot_krpc and self.plot_profile:
-            layout_style = "1fr 1fr 1fr 1fr"
-        elif self.plot_krpc:
-            layout_style = "1fr 1fr 1fr"
-        else:
-            layout_style = "1fr 1fr"
-
-        return html.Div([
-                        dcc.Store(id=self.reset_flag_id),
-                        html.Div(
-                            style=set_grid_layout(layout_style),
-                            children=[
-                                html.Div([self.x_axis_selector, self.y_axis_selector], style={
-                                         'display': 'block' if self.plot_profile else 'none'}),
-                                html.Div([self.toggle_satnum, self.toggle_type], style={
-                                         'display': 'block' if self.plot_krpc else 'none'}),
-                                html.Div([self.visc1_input, self.visc2_input], style={
-                                         'display': 'block' if self.plot_krpc else 'none'}),
-                                html.Div([self.toggle_axis, self.opacity_selector], style={
-                                         'display': 'block' if self.plot_ensembles else 'none'}),
-                            ]
-                        ),
-                        html.Div(
-                            children=[
-                                self.reset_button,
-                                html.Div(
-                                    id=self.plot_id,
-                                    children=[
-                                        wcc.Graph(
-                                            id=self.figure_id, figure={}),
-                                    ]
-                                )
-                            ]
-                        )
-                        ])
 
     def toggle_relperm_axis(self, figure, semilog):
         if semilog:
@@ -509,67 +472,29 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
         return _dict
 
     def set_callbacks(self, app):
-        @app.callback(self.plugin_data_output,
-                      [self.plugin_data_requested],
-                      [
-                          State(self.figure_id, 'figure'),
-                          State(self.x_axis_id, 'value'),
-                          State(self.y_axis_id, 'value'),
-                          State(self.satnum_id, 'value'),
-                          State(self.table_type_id, 'value'),
-                      ])
-        def _user_download_data(data_requested, figure, x_axis, y_axis, satnum, table_type):
-            warning('User Download Data')
-
-            # TODO: Extract data directly from pandas dataframe
-            if (not data_requested) or (not "data" in figure):
-                return ''
-
-            #keys = self.dict_table.get(table_type, self.dict_table['SWOF'])
-
-            data = figure["data"]
-            entries = set()
-            for i, trace in enumerate(figure["data"]):
-                warning(f'{trace["meta"]} : {trace.get("visible",True)}')
-                if trace.get('visible', True) and trace["meta"] != "dummy":
-                    entries.add(trace['meta'])
-
-            file_list = []
-            for entry in entries:
-                ens, real, type = entry.split("/")
-                if self.plot_krpc:
-                    pass
-
-            byte_io = io.BytesIO()
-            with zipfile.ZipFile(byte_io, 'w', compression=zipfile.ZIP_DEFLATED) as zipped_data:
-                for data in file_list:
-                    zipped_data.writestr(data["filename"], data["content"])
-            byte_io.seek(0)
-            return base64.b64encode(byte_io.read()).decode("ascii")
-
-        @app.callback(Output(self.plot_id, 'children'),
-                      [Input(self.x_axis_id, 'value'),
-                       Input(self.y_axis_id, 'value'),
-                       Input(self.satnum_id, 'value'),
-                       Input(self.table_type_id, 'value'),
-                       Input(self.visc1_id, 'value'),
-                       Input(self.visc2_id, 'value'),
+        @app.callback(Output(self.uuid("plot"), 'children'),
+                      [Input(self.uuid("x_axis"), 'value'),
+                       Input(self.uuid("y_axis"), 'value'),
+                       Input(self.uuid("satnum"), 'value'),
+                       Input(self.uuid("type"), 'value'),
+                       Input(self.uuid("visc1"), 'value'),
+                       Input(self.uuid("visc2"), 'value'),
                        ],
                       [
-            State(self.opacity_id, 'value'),
-            State(self.toggle_axis_id, 'value'),
+            State(self.uuid("opacity"), 'value'),
+            State(self.uuid("axis"), 'value'),
         ])
         def plot_figure(x_axis, y_axis, satnum, table_type, visc1, visc2, opacity, axis_type):
             warning("Plot Figure")
-            # if not dash.callback_context.triggered:
-            #     raise PreventUpdate
+            if not dash.callback_context.triggered:
+                raise PreventUpdate
             sat = ""
             if self.plot_krpc:
                 sat, kr1, kr2, pc = krpc_table_key(table_type)
 
             layout = self.create_layout(sat, x_axis, y_axis)
             data = []
-            color_list = itertools.cycle(palette.tableau_flip)
+            color_list = itertools.cycle(self.colors)
             #color_list = itertools.cycle(palette.tableau_20)
 
             color_dict = {}
@@ -625,8 +550,8 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                                 showlegend = False
 
                             df_ens = df[df['ENSEMBLE'] == ens]
-                            for idx_real, real in enumerate(df_ens['Realization'].unique()):
-                                df_real = df_ens[df_ens['Realization'] == real]
+                            for idx_real, real in enumerate(df_ens['REAL'].unique()):
+                                df_real = df_ens[df_ens['REAL'] == real]
 
                                 if showlegend and idx_real == 0:
                                     data.append(self.create_dummy_trace_dict(
@@ -665,36 +590,37 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                                                               False,
                                                               color,
                                                               f'{ens}/{real}/{data_type}', 'x3', 'y3'))
+            return wcc.Graph(figure=go.Figure(data=data, layout=layout), id=self.uuid("figure"))
 
-            return wcc.Graph(figure=go.Figure(data=data, layout=layout), id=self.figure_id)
-
-        @app.callback([Output(self.figure_id, 'figure'),
-                       Output(self.reset_flag_id, 'data')
+        @app.callback([Output(self.uuid("figure"), 'figure'),
+                       Output(self.uuid("reset_flag"), 'data')
                        ],
-                      [Input(self.opacity_id, 'value'),
-                       Input(self.toggle_axis_id, 'value'),
-                       Input(self.figure_id, "clickData"),
-                       Input(self.reset_id, "n_clicks")
+                      [Input(self.uuid("opacity"), 'value'),
+                       Input(self.uuid("axis"), 'value'),
+                       Input(self.uuid("figure"), "clickData"),
+                       Input(self.uuid("reset"), "n_clicks")
                        ],
-                      [State(self.figure_id, 'figure'),
-                       State(self.reset_flag_id, 'data')])
+                      [State(self.uuid("figure"), 'figure'),
+                       State(self.uuid("reset_flag"), 'data')])
         def _update_style(opacity, toggle_axis, clickData, reset, figure, reset_mode):
+            warning("Update Style")
             ctx = dash.callback_context.triggered
             if not ctx:
+                warning("Cancel update style")
                 raise PreventUpdate
             sender = ctx[0]['prop_id'].split('.')[0]
             if reset_mode is None:
                 reset_mode = True
-            if sender == self.figure_id:
+            if sender == self.uuid("figure"):
                 reset_mode = False
-            elif sender == self.reset_id:
+            elif sender == self.uuid("reset"):
                 reset_mode = True
 
-            if sender in [self.opacity_id, self.figure_id, self.reset_id]:
+            if sender in [self.uuid("opacity"), self.uuid("figure"), self.uuid("reset")]:
                 if clickData and not reset_mode:
                     curve_idx = clickData["points"][0]["curveNumber"]
                     selected_meta = figure["data"][curve_idx]["meta"]
-                    reference_opacity = 0.3
+                    reference_opacity = 0.2
                     ensemble_opacity = min(0.2, 0.5*opacity)
                 else:
                     selected_meta = ""
@@ -711,8 +637,9 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                                 trace["opacity"] = reference_opacity
                         else:
                             trace["opacity"] = 1.0
-            elif sender == self.toggle_axis_id:
+            elif sender == self.uuid("axis"):
                 if "layout" in figure:
-                    self.toggle_relperm_axis(figure, len(toggle_axis) > 0)
+                    print(toggle_axis)
+                    self.toggle_relperm_axis(figure, toggle_axis == "log")
                     figure["layout"]["uirevision"] = str(random())
             return figure, reset_mode

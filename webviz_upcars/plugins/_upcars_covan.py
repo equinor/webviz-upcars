@@ -25,6 +25,8 @@ Input is an aggregated csv file generated from ERT Covan Workflow
     ):
 
         super().__init__()
+        self.csv_relperm = csv_relperm
+        self.csv_reference = csv_reference
         if not (csv_relperm and csv_reference):
             raise ValueError(
                 "Incorrect argument. Please provide path to csv files from covan analysis."
@@ -121,6 +123,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
                     line=area_line,
                     name="Confidence Interval",
                     legendgroup="Interval",
+                    hoverinfo='skip',
                     showlegend=i == 0,
                 ),
                 row=row,
@@ -136,6 +139,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
                     fillcolor=fill_color,
                     name="Confidence Interval",
                     legendgroup="Interval",
+                    hoverinfo='skip',
                     showlegend=False,
                 ),
                 row=row,
@@ -245,7 +249,10 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         return fig
 
     def add_webvizstore(self):
-        return [(read_csv, [{"csv_file": self.csv_relperm}])]
+        return [(read_csv, [
+            {"csv_file": self.csv_relperm},
+            {"csv_file": self.csv_reference},
+            ])]
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)

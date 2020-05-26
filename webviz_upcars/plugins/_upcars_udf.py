@@ -127,7 +127,7 @@ def get_multiple_table_df(
     table_list = []
     for name, path in tables:
         table = pd.read_csv(path)
-        table.insert(0, "Realization", 0)
+        table.insert(0, "REAL", 0)
         table.insert(0, "ENSEMBLE", name)
         table_list.append(table)
     if table_list:
