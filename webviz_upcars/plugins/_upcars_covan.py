@@ -27,6 +27,10 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         super().__init__()
         self.csv_relperm = csv_relperm
         self.csv_reference = csv_reference
+        self.csv_relperm = csv_relperm
+        self.csv_relperm = csv_relperm
+        self.csv_relperm = csv_relperm
+        self.csv_reference = csv_reference
         if not (csv_relperm and csv_reference):
             raise ValueError(
                 "Incorrect argument. Please provide path to csv files from covan analysis."
