@@ -70,7 +70,7 @@ jobs:
     - name: 🤖 Run tests
       run: |
         webviz certificate
-        pytest ./tests --headless
+#        pytest ./tests --headless
         git clone https://github.com/equinor/webviz-config.git
         pushd ./webviz-config/docs
         python build_docs.py
