@@ -1,6 +1,6 @@
-from pkg_resources import get_distribution, DistributionNotFound
 import pathlib
 import glob
+from pkg_resources import get_distribution, DistributionNotFound
 
 import webviz_config
 
@@ -9,6 +9,7 @@ try:
 except DistributionNotFound:
     # package is not installed
     pass
+
 
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("scratch_ensembles")
 def subscribe(scratch_ensembles, config_folder, portable):
@@ -23,13 +24,15 @@ def subscribe(scratch_ensembles, config_folder, portable):
                 )
 
     return scratch_ensembles
+
+
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("realizations")
 def subscribe(realizations, config_folder, portable):
     if realizations is not None:
         for realization_name, realization_path in realizations.items():
             if not pathlib.Path(realization_path).is_absolute():
                 realizations[realization_name] = str(config_folder / realization_path)
-        
+
         for realization_name, realization_path in realizations.items():
             if not portable and not glob.glob(realizations[realization_name]):
                 raise ValueError(
@@ -37,12 +40,13 @@ def subscribe(realizations, config_folder, portable):
                     " but that wildcard path does not give any matches."
                 )
     return realizations
-    
+
+
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("krpc_csv_tables")
 def subscribe(krpc_csv_tables, config_folder, portable):
     if krpc_csv_tables is not None:
         for name, path in krpc_csv_tables.items():
-            print (path + "\t" + name)
+            print(path + "\t" + name)
             if not pathlib.Path(path).is_absolute():
                 krpc_csv_tables[name] = str(config_folder / path)
             if not portable and not glob.glob(krpc_csv_tables[name]):

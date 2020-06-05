@@ -9,10 +9,6 @@ from webviz_config.webviz_store import webvizstore
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
-
-from ._upcars_udf import palette
-
-
 class UpCaRsCovan(WebvizPluginABC):
     """### Plot for Linearized Co-variance analysis
 
@@ -27,25 +23,19 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         super().__init__()
         self.csv_relperm = csv_relperm
         self.csv_reference = csv_reference
-        self.csv_relperm = csv_relperm
-        self.csv_relperm = csv_relperm
-        self.csv_relperm = csv_relperm
-        self.csv_reference = csv_reference
         if not (csv_relperm and csv_reference):
             raise ValueError(
                 "Incorrect argument. Please provide path to csv files from covan analysis."
             )
-        else:
-            self.curves = read_csv(csv_relperm)
-            self.reference = read_csv(csv_reference)
-            self.gas_oil_mode = "krg" in self.curves.columns
-            self.obs_params = []
-            for col in self.reference.columns:
-                print(col)
-                if ":BASE" in col:
-                    obs = col[:-5]
-                    if not obs in self.obs_params:
-                        self.obs_params.append(obs)
+        self.curves = read_csv(csv_relperm).round(4)
+        self.reference = read_csv(csv_reference)
+        self.gas_oil_mode = "krg" in self.curves.columns
+        self.obs_params = []
+        for col in self.reference.columns:
+            if ":BASE" in col:
+                obs = col[:-5]
+                if not obs in self.obs_params:
+                    self.obs_params.append(obs)
 
         self.uid = uuid4()
 
@@ -76,8 +66,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         return html.Div(
             id=self.ids("layout"),
             children=[
-                wcc.Graph(id=self.ids("reference"),
-                          figure=self.plot_reference()),
+                wcc.Graph(id=self.ids("reference"), figure=self.plot_reference()),
                 wcc.Graph(id=self.ids("relperm"), figure=self.plot_relperm()),
             ],
         )
@@ -122,12 +111,11 @@ Input is an aggregated csv file generated from ERT Covan Workflow
             fig.add_trace(
                 go.Scatter(
                     x=self.reference["Elapsed Days"],
-                    y=self.reference[f"{obs}:BASE"] -
-                    self.reference[f"{obs}:SD"],
+                    y=self.reference[f"{obs}:BASE"] - self.reference[f"{obs}:SD"],
                     line=area_line,
                     name="Confidence Interval",
                     legendgroup="Interval",
-                    hoverinfo='skip',
+                    hoverinfo="skip",
                     showlegend=i == 0,
                 ),
                 row=row,
@@ -136,14 +124,13 @@ Input is an aggregated csv file generated from ERT Covan Workflow
             fig.add_trace(
                 go.Scatter(
                     x=self.reference["Elapsed Days"],
-                    y=self.reference[f"{obs}:BASE"] +
-                    self.reference[f"{obs}:SD"],
+                    y=self.reference[f"{obs}:BASE"] + self.reference[f"{obs}:SD"],
                     line=area_line,
                     fill="tonexty",
                     fillcolor=fill_color,
                     name="Confidence Interval",
                     legendgroup="Interval",
-                    hoverinfo='skip',
+                    hoverinfo="skip",
                     showlegend=False,
                 ),
                 row=row,
@@ -155,25 +142,30 @@ Input is an aggregated csv file generated from ERT Covan Workflow
                 col = 1
                 row += 1
         fig.update_xaxes(title="Elapsed days")
-        fig.update_layout(height=600, hovermode='x unified')
+        fig.update_layout(height=600, hovermode="x unified")
 
         return fig
 
     def plot_relperm(self):
-        fig = make_subplots(
-            rows=1,
-            cols=2,
-            subplot_titles=["Water Relative Permeability",
-                            "Oil Relative Permeability"],
-        )  # , horizontal_spacing=0.15)
+        if self.gas_oil_mode:
+            plot_titles = ["Gas Relative Permeability", "Oil Relative Permeability"]
+            sat_col = "Sg"
+            kr1_col = "krg"
+            dkr1_col = "dkrg"
+        else:
+            plot_titles = ["Water Relative Permeability", "Oil Relative Permeability"]
+            sat_col = "Sw"
+            kr1_col = "krw"
+            dkr1_col = "dkrw"
+        fig = make_subplots(rows=1, cols=2, subplot_titles=plot_titles)
         curve_line = {"color": "black", "width": 2}
         area_line = {"color": "red", "dash": "dash", "width": 2}
         fill_color = "rgba(255, 170, 170, 0.3)"
         # Water Relative Permeability
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
-                y=self.curves["krw"] + self.curves["dkrw"],
+                x=self.curves[sat_col],
+                y=self.curves[kr1_col] + self.curves[dkr1_col],
                 hoverinfo="skip",
                 line=area_line,
             ),
@@ -182,8 +174,8 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         )
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
-                y=self.curves["krw"] - self.curves["dkrw"],
+                x=self.curves[sat_col],
+                y=self.curves[kr1_col] - self.curves[dkr1_col],
                 hoverinfo="skip",
                 line=area_line,
                 fill="tonexty",
@@ -194,12 +186,11 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         )
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
-                y=self.curves["krw"],
-                name="krw",
+                x=self.curves[sat_col],
+                y=self.curves[kr1_col],
+                name=kr1_col,
                 line=curve_line,
-                hovertext=["dkr = {}".format(dkr)
-                           for dkr in self.curves["dkrw"]],
+                hovertext=["dkr = {}".format(dkr) for dkr in self.curves[dkr1_col]],
             ),
             row=1,
             col=1,
@@ -208,7 +199,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         # Oil Relative Permeability
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
+                x=self.curves[sat_col],
                 y=self.curves["kro"] + self.curves["dkro"],
                 hoverinfo="skip",
                 line=area_line,
@@ -218,7 +209,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         )
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
+                x=self.curves[sat_col],
                 y=self.curves["kro"] - self.curves["dkro"],
                 hoverinfo="skip",
                 fill="tonexty",
@@ -230,33 +221,33 @@ Input is an aggregated csv file generated from ERT Covan Workflow
         )
         fig.add_trace(
             go.Scatter(
-                x=self.curves["Sw"],
+                x=self.curves[sat_col],
                 y=self.curves["kro"],
                 name="kro",
                 line=curve_line,
-                hovertext=["dkr = {}".format(dkr)
-                           for dkr in self.curves["dkro"]],
+                hovertext=["dkr = {}".format(dkr) for dkr in self.curves["dkro"]],
             ),
             row=1,
             col=2,
         )
 
-        fig.update_xaxes(range=[0.0, 1.0], dtick=0.2,
-                         title="Saturation, fraction")
+        fig.update_xaxes(range=[0.0, 1.0], dtick=0.2, title="Saturation, fraction")
         fig.update_yaxes(
             range=[0.0, 1.0], dtick=0.2, title="Relative Permeability, fraction"
         )
 
         fig.update_layout(
-            showlegend=False, height=600,
+            showlegend=False, height=800,
         )
         return fig
 
     def add_webvizstore(self):
-        return [(read_csv, [
-            {"csv_file": self.csv_relperm},
-            {"csv_file": self.csv_reference},
-            ])]
+        return [
+            (
+                read_csv,
+                [{"csv_file": self.csv_relperm}, {"csv_file": self.csv_reference},],
+            )
+        ]
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)

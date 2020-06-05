@@ -17,8 +17,6 @@ setup(
             "UpCaRsParameterDistribution = webviz_upcars.plugins:UpCaRsParameterDistribution",
             "UpCaRsSimulationProfile = webviz_upcars.plugins:UpCaRsSimulationProfile",
             "UpCaRsCovan = webviz_upcars.plugins:UpCaRsCovan",
-            "SomeCustomPlugin = webviz_upcars.plugins:SomeCustomPlugin",
-            "SomeOtherCustomPlugin = webviz_upcars.plugins:SomeOtherCustomPlugin",
         ]
     },
     install_requires=["webviz-config>=0.0.40",],
