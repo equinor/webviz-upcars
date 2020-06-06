@@ -9,6 +9,7 @@ from webviz_config.webviz_store import webvizstore
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+
 class UpCaRsCovan(WebvizPluginABC):
     """### Plot for Linearized Co-variance analysis
 

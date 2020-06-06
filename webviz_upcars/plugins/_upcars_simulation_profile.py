@@ -11,10 +11,20 @@ import dash
 from dash.exceptions import PreventUpdate
 
 # from ._upcars_udf import *
-from ._upcars_udf import bcolors, create_trace_dict, krpc_table_key, get_table_df, get_multiple_table_df, get_ensemble_df, get_summary_df
+from ._upcars_udf import (
+    bcolors,
+    create_trace_dict,
+    krpc_table_key,
+    get_table_df,
+    get_multiple_table_df,
+    get_ensemble_df,
+    get_summary_df,
+)
+
 
 def warning(message):
     print(f"{bcolors.WARNING}{message}{bcolors.ENDC}")
+
 
 class UpCaRsSimulationProfile(WebvizPluginABC):
     """
@@ -134,7 +144,9 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                 self.df_ref_krpc = None
 
             if self.krpc_ensembles:
-                self.krpc_csv_tables = self.shared_settings["krpc_csv_tables"][self.krpc_ensembles]
+                self.krpc_csv_tables = self.shared_settings["krpc_csv_tables"][
+                    self.krpc_ensembles
+                ]
                 self.df_ens_krpc = get_table_df(self.krpc_csv_tables)
                 # Create Iter column based on ENSEMBLE column
                 self.df_ens_krpc["Iter"] = self.df_ens_krpc.apply(
@@ -468,22 +480,24 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
         return [
             (
                 get_ensemble_df,
-                [{"ensemble_path": self.ensemble_paths, "column_keys": self.column_keys}],
+                [
+                    {
+                        "ensemble_path": self.ensemble_paths,
+                        "column_keys": self.column_keys,
+                    }
+                ],
             ),
             (
                 get_summary_df,
                 [
-                 {"case_paths": self.references_tuple, "column_keys": self.column_keys}
+                    {
+                        "case_paths": self.references_tuple,
+                        "column_keys": self.column_keys,
+                    }
                 ],
             ),
-            (
-                get_table_df,
-                [{"csv_table": self.krpc_csv_tables}]
-            ),
-            (
-                get_multiple_table_df,
-                [{"tables": self.case_tuple}]
-            )
+            (get_table_df, [{"csv_table": self.krpc_csv_tables}]),
+            (get_multiple_table_df, [{"tables": self.case_tuple}]),
         ]
 
     def set_callbacks(self, app):
