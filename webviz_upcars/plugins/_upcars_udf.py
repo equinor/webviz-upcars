@@ -140,7 +140,9 @@ def load_ensemble_set(ensemble_paths: tuple):
 @webvizstore
 def get_ensemble_df(ensemble_path: tuple, column_keys: tuple) -> pd.DataFrame:
     ensset = load_ensemble_set(ensemble_path)
-    return ensset.get_smry(column_keys=column_keys)
+    df = ensset.get_smry(column_keys=column_keys)
+    df.rename(columns={"FUPVINJ": "Pore Volume Injected"}, inplace=True)
+    return df
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
@@ -153,6 +155,7 @@ def get_summary_df(case_paths: tuple, column_keys: tuple) -> pd.DataFrame:
             include_restart=False,
             lazy_load=False,
         ).pandas_frame(None, column_keys)
+        smry.rename(columns={"FUPVINJ": "Pore Volume Injected"}, inplace=True)
         smry.insert(0, "REAL", 0)
         smry.insert(0, "ENSEMBLE", case_name)
 
@@ -160,14 +163,16 @@ def get_summary_df(case_paths: tuple, column_keys: tuple) -> pd.DataFrame:
     if smrylist:
         # pd.concat(smrylist, sort=False).to_csv("/mnt/c/home_office/dump.csv", index=False)
         df = pd.concat(smrylist, sort=False)
-        df = df.loc[:,~df.columns.duplicated()]
+        df = df.loc[:, ~df.columns.duplicated()]
         return df
     return pd.DataFrame()
+
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
 @webvizstore
 def load_parameters(ensemble_paths: tuple) -> pd.DataFrame:
     return load_ensemble_set(ensemble_paths).parameters
+
 
 def set_grid_layout(columns):
     return {
@@ -224,6 +229,7 @@ def eclsum_keyword2title(keyword):
             )
         return "".join(title_list)
     return _title
+
 
 def create_trace(x, y, curve_name, legend_name, opacity, showlegend, color, meta):
     return go.Scattergl(

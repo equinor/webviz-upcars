@@ -12,6 +12,7 @@ from webviz_config.webviz_store import webvizstore
 
 from ._upcars_udf import palette, load_parameters
 
+
 class UpCaRsParameterDistribution(WebvizPluginABC):
     """### ParameterDistribution
 
