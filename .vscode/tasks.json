@@ -1,0 +1,74 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "black",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "black webviz_upcars setup.py",
+            "problemMatcher": []
+        },
+        {
+            "label": "pylint project",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "pylint webviz_upcars setup.py",
+            "problemMatcher": [
+                "$eslint-stylish"
+            ]
+        },
+        {
+            "label": "pylint current file",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "pylint ${file}",
+            "problemMatcher": [
+                "$eslint-stylish"
+            ]
+        },
+        {
+            "label": "bandit",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "bandit -r -c ./bandit.yml webviz_upcars setup.py"
+        },
+        {
+            "label": "webviz",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "webviz build ./examples/basic_example.yaml --theme equinor",
+            "problemMatcher": []
+        },
+        {
+            "label": "webviz - parameter distribution",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "webviz build ./examples/parameter_distribution_example.yaml --theme equinor",
+            "problemMatcher": []
+        },
+        {
+            "label": "webviz - simulation profile",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "webviz build ./examples/simulation_profile_example.yaml --theme equinor",
+            "problemMatcher": []
+        },
+
+    ]
+}

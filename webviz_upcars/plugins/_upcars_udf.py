@@ -10,9 +10,19 @@ try:
 except ImportError:
     pass
 
+TERMINALCOLORS = {
+    "HEADER": "\033[95m",
+    "OKBLUE": "\033[94m",
+    "OKGREEN": "\033[92m",
+    "WARNING": "\033[93m",
+    "FAIL": "\033[91m",
+    "ENDC": "\033[0m",
+    "BOLD": "\033[1m",
+    "UNDERLINE": "\033[4m",
+}
 
-class palette:
-    tableau = [
+PALETTE = {
+    "tableau": [
         "rgb(31, 119, 180)",
         "rgb(255, 127, 14)",
         "rgb(44, 160, 44)",
@@ -23,8 +33,8 @@ class palette:
         "rgb(127, 127, 127)",
         "rgb(188, 189, 34)",
         "rgb(23, 190, 207)",
-    ]
-    tableau_light = [
+    ],
+    "tableau_light": [
         "rgb(174, 199, 232)",
         "rgb(255, 187, 120)",
         "rgb(152, 223, 138)",
@@ -35,8 +45,8 @@ class palette:
         "rgb(199, 199, 199)",
         "rgb(219, 219, 141)",
         "rgb(158, 218, 229)",
-    ]
-    tabelau_medium = [
+    ],
+    "tableau_medium": [
         "rgb(114, 158, 206)",
         "rgb(255, 158, 74)",
         "rgb(103, 191, 92)",
@@ -47,8 +57,8 @@ class palette:
         "rgb(162, 162, 162)",
         "rgb(205, 204, 93)",
         "rgb(109, 204, 218)",
-    ]
-    tableau_flip = [
+    ],
+    "tableau_flip": [
         "rgb(31, 119, 180)",
         "rgb(174, 199, 232)",
         "rgb(255, 127, 14)",
@@ -69,8 +79,8 @@ class palette:
         "rgb(219, 219, 141)",
         "rgb(23, 190, 207)",
         "rgb(158, 218, 229)",
-    ]
-    tableau_20 = [
+    ],
+    "tableau_20": [
         "rgb(255, 187, 120)",
         "rgb(255, 127, 14 )",
         "rgb(174, 199, 232)",
@@ -91,8 +101,8 @@ class palette:
         "rgb(188, 189, 34 )",
         "rgb(158, 218, 229)",
         "rgb(23, 190, 207 )",
-    ]
-    colorblind = [
+    ],
+    "colorblind": [
         "rgb(0, 107, 164  )",
         "rgb(255, 128, 14 )",
         "rgb(171, 171, 171)",
@@ -103,7 +113,8 @@ class palette:
         "rgb(162, 200, 236)",
         "rgb(255, 188, 121)",
         "rgb(207, 207, 207)",
-    ]
+    ],
+}
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
@@ -140,7 +151,9 @@ def load_ensemble_set(ensemble_paths: tuple):
 @webvizstore
 def get_ensemble_df(ensemble_path: tuple, column_keys: tuple) -> pd.DataFrame:
     ensset = load_ensemble_set(ensemble_path)
-    return ensset.get_smry(column_keys=column_keys)
+    data_frame = ensset.get_smry(column_keys=column_keys)
+    data_frame['DAYS'] = data_frame['YEARS']*365.25
+    return data_frame
 
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
@@ -159,15 +172,18 @@ def get_summary_df(case_paths: tuple, column_keys: tuple) -> pd.DataFrame:
         smrylist.append(smry)
     if smrylist:
         # pd.concat(smrylist, sort=False).to_csv("/mnt/c/home_office/dump.csv", index=False)
-        df = pd.concat(smrylist, sort=False)
-        df = df.loc[:,~df.columns.duplicated()]
-        return df
+        data_frame = pd.concat(smrylist, sort=False)
+        data_frame = data_frame.loc[:, ~data_frame.columns.duplicated()]
+        data_frame['DAYS'] = data_frame['YEARS']*365.25
+        return data_frame
     return pd.DataFrame()
+
 
 @CACHE.memoize(timeout=CACHE.TIMEOUT)
 @webvizstore
 def load_parameters(ensemble_paths: tuple) -> pd.DataFrame:
     return load_ensemble_set(ensemble_paths).parameters
+
 
 def set_grid_layout(columns):
     return {
@@ -177,17 +193,6 @@ def set_grid_layout(columns):
         "gridTemplateColumns": f"{columns}",
         "gridColumnGap": "10px",
     }
-
-
-class bcolors:
-    HEADER = "\033[95m"
-    OKBLUE = "\033[94m"
-    OKGREEN = "\033[92m"
-    WARNING = "\033[93m"
-    FAIL = "\033[91m"
-    ENDC = "\033[0m"
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
 
 
 def eclsum_keyword2title(keyword):
@@ -225,10 +230,14 @@ def eclsum_keyword2title(keyword):
         return "".join(title_list)
     return _title
 
-def create_trace(x, y, curve_name, legend_name, opacity, showlegend, color, meta):
+
+# pylint:disable=too-many-arguments
+def create_trace(
+    x_value, y_value, curve_name, legend_name, opacity, showlegend, color, meta
+):
     return go.Scattergl(
-        x=x,
-        y=y,
+        x=x_value,
+        y=y_value,
         legendgroup=legend_name,
         hovertext=curve_name,
         hoverinfo="y+x+text",
@@ -244,11 +253,20 @@ def create_trace(x, y, curve_name, legend_name, opacity, showlegend, color, meta
 
 
 def create_trace_dict(
-    x, y, curve_name, legend_name, opacity, showlegend, color, meta, xaxis, yaxis
+    x_value,
+    y_value,
+    curve_name,
+    legend_name,
+    opacity,
+    showlegend,
+    color,
+    meta,
+    xaxis,
+    yaxis,
 ):
     return {
-        "x": x,
-        "y": y,
+        "x": x_value,
+        "y": y_value,
         "legendgroup": legend_name,
         "hovertext": curve_name,
         "hoverinfo": "y+x+text",

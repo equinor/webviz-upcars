@@ -1,4 +1,3 @@
-from uuid import uuid4
 from pathlib import Path
 import pandas as pd
 import dash_html_components as html
@@ -8,6 +7,7 @@ from webviz_config.common_cache import CACHE
 from webviz_config.webviz_store import webvizstore
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+
 
 class UpCaRsCovan(WebvizPluginABC):
     """### Plot for Linearized Co-variance analysis
@@ -37,37 +37,42 @@ Input is an aggregated csv file generated from ERT Covan Workflow
                 if not obs in self.obs_params:
                     self.obs_params.append(obs)
 
-        self.uid = uuid4()
-
-    def ids(self, element):
-        """Generate unique id for dom element"""
-        return f"{element}-id-{self.uid}"
-
     @property
     def tour_steps(self):
-        # TODO: Update the tour steps
         return [
             {
-                "id": self.ids("layout"),
-                "content": ("Dashboard displaying distribution of input parameters"),
+                "id": self.uuid("layout"),
+                "content": (
+                    "Dashboard displaying result from covariance analysis "
+                    "of relative permeability curve"
+                ),
             },
             {
-                "id": self.ids("graph"),
+                "id": self.uuid("reference"),
                 "content": (
-                    "Visualization of currently selected parameter as histogram "
-                    "series and distribution range per ensemble."
+                    "Visualization of objective functions being used as "
+                    "input paramteter for covariance analysis. The standard "
+                    "deviation is taken from average error between base case "
+                    "and reference (fine-scale) case"
+                ),
+            },
+            {
+                "id": self.uuid("relperm"),
+                "content": (
+                    "Visualization of relative permeability confidence interval. "
+                    "A wide range (in vertical direction) shows that there is "
+                    "not much confidence in the value."
                 ),
             },
         ]
 
     @property
     def layout(self):
-        # TODO: Add options for semi-log
         return html.Div(
-            id=self.ids("layout"),
+            id=self.uuid("layout"),
             children=[
-                wcc.Graph(id=self.ids("reference"), figure=self.plot_reference()),
-                wcc.Graph(id=self.ids("relperm"), figure=self.plot_relperm()),
+                wcc.Graph(id=self.uuid("reference"), figure=self.plot_reference()),
+                wcc.Graph(id=self.uuid("relperm"), figure=self.plot_relperm()),
             ],
         )
 
