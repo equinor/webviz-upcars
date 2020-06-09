@@ -171,7 +171,6 @@ def get_summary_df(case_paths: tuple, column_keys: tuple) -> pd.DataFrame:
 
         smrylist.append(smry)
     if smrylist:
-        # pd.concat(smrylist, sort=False).to_csv("/mnt/c/home_office/dump.csv", index=False)
         data_frame = pd.concat(smrylist, sort=False)
         data_frame = data_frame.loc[:, ~data_frame.columns.duplicated()]
         data_frame['DAYS'] = data_frame['YEARS']*365.25

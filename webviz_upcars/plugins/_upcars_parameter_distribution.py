@@ -136,11 +136,8 @@ or as an ensemble name defined in `shared_settings`.
             )
         if csvfile:
             self.parameters = read_csv(csvfile)
-            self.parameters = self.parameters.loc[
-                :, self.parameters.columns.str.contains(":")
-            ]
             self.parameters.rename(columns=lambda x: x[x.find(':')+1:], inplace=True)
-
+            self.parameters = self.parameters.loc[:, ~self.parameters.columns.duplicated()]
             self.ensembles = list(self.parameters["ENSEMBLE"].unique())
         elif ensembles:
             self.ensembles = tuple(
