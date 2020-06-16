@@ -118,6 +118,7 @@ def create_hist_layout(parameters, n_cols=4, box_plot_height=100, hist_plot_heig
     return chart_dict
 
 
+
 class UpCaRsParameterDistribution(WebvizPluginABC):
     """### ParameterDistribution
 
