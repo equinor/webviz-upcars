@@ -1,0 +1,9 @@
+title: Test of Webviz plugins for UpCaRs project - Parameter Distribution Plugin
+
+pages:
+- title: Parameter Distribution
+  content:
+  - This plugin shows the distribution of the parameters from ERT run. The input can be either CSV file or from Eclipse ensembles in scratch disk. It will also display the best realization for each ensembles.
+  - UpCaRsParameterDistribution:
+      csvfile: ./aggregated/parameters.csv
+      best_realization: [31, 4, 56, 12]

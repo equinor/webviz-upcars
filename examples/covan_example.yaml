@@ -1,0 +1,9 @@
+title: Test of Webviz plugins for UpCaRs project
+
+pages:
+- title: Front page
+  content:
+  - This plugin shows the confidence interval
+  - UpCaRsCovan:
+      csv_relperm: ./aggregated/relperm.csv
+      csv_reference: ./aggregated/reference.csv

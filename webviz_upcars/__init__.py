@@ -12,7 +12,7 @@ except DistributionNotFound:
 
 
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("scratch_ensembles")
-def subscribe(scratch_ensembles, config_folder, portable):
+def subscribe_scratch_ensemble(scratch_ensembles, config_folder, portable):
     if scratch_ensembles is not None:
         for ensemble_name, ensemble_path in scratch_ensembles.items():
             if not pathlib.Path(ensemble_path).is_absolute():
@@ -27,7 +27,7 @@ def subscribe(scratch_ensembles, config_folder, portable):
 
 
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("realizations")
-def subscribe(realizations, config_folder, portable):
+def subscribe_realizations(realizations, config_folder, portable):
     if realizations is not None:
         for realization_name, realization_path in realizations.items():
             if not pathlib.Path(realization_path).is_absolute():
@@ -43,7 +43,7 @@ def subscribe(realizations, config_folder, portable):
 
 
 @webviz_config.SHARED_SETTINGS_SUBSCRIPTIONS.subscribe("krpc_csv_tables")
-def subscribe(krpc_csv_tables, config_folder, portable):
+def subscribe_krpc_csv_tables(krpc_csv_tables, config_folder, portable):
     if krpc_csv_tables is not None:
         for name, path in krpc_csv_tables.items():
             print(path + "\t" + name)
