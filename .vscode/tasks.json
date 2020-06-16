@@ -89,6 +89,15 @@
             },
             "command": "webviz build ./examples/simulation_profile_example.yaml --theme equinor",
             "problemMatcher": []
+        },
+        {
+            "label": "webviz - covan",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "webviz build ./examples/covan_example.yaml --theme equinor",
+            "problemMatcher": []
         }
     ]
 }

@@ -351,11 +351,9 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
                     self.df_ens_krpc["ENSEMBLE"] = self.df_ens_krpc.apply(
                         lambda row: dict_ens.get(row["Iter"], None), axis=1
                     )
-                data_frame = self.df_ens_krpc
             else:
                 self.df_ens_krpc = None
                 ensembles = []
-                data_frame = self.df_ref_krpc
 
             self.satnum_list = []
             self.table_type = []
