@@ -1,25 +1,22 @@
 from pathlib import Path
-import pandas as pd
 import dash_html_components as html
 import webviz_core_components as wcc
 from webviz_config import WebvizPluginABC
-from webviz_config.common_cache import CACHE
-from webviz_config.webviz_store import webvizstore
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
+from .._util.fmu_input import get_table_df
 
 
 class UpCaRsCovan(WebvizPluginABC):
     """### Plot for Linearized Co-variance analysis
 
-This container shows relative permeability and its confidence interval.
-Input is an aggregated csv file generated from ERT Covan Workflow
-"""
+    This container shows relative permeability and its confidence interval.
+    Input is an aggregated csv file generated from ERT Covan Workflow
+    """
 
     def __init__(
         self, app, csv_relperm: Path = None, csv_reference: Path = None,
     ):
-
         super().__init__()
         self.csv_relperm = csv_relperm
         self.csv_reference = csv_reference
@@ -27,8 +24,8 @@ Input is an aggregated csv file generated from ERT Covan Workflow
             raise ValueError(
                 "Incorrect argument. Please provide path to csv files from covan analysis."
             )
-        self.curves = read_csv(csv_relperm).round(4)
-        self.reference = read_csv(csv_reference)
+        self.curves = get_table_df(csv_relperm).round(4)
+        self.reference = get_table_df(csv_reference)
         self.gas_oil_mode = "krg" in self.curves.columns
         self.obs_params = []
         for col in self.reference.columns:
@@ -41,7 +38,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
     def tour_steps(self):
         return [
             {
-                "id": self.uuid("layout"),
+                "id": self.uuid("layout-covan"),
                 "content": (
                     "Dashboard displaying result from covariance analysis "
                     "of relative permeability curve"
@@ -69,7 +66,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
     @property
     def layout(self):
         return html.Div(
-            id=self.uuid("layout"),
+            id=self.uuid("layout-covan"),
             children=[
                 wcc.Graph(id=self.uuid("reference"), figure=self.plot_reference()),
                 wcc.Graph(id=self.uuid("relperm"), figure=self.plot_relperm()),
@@ -249,13 +246,7 @@ Input is an aggregated csv file generated from ERT Covan Workflow
     def add_webvizstore(self):
         return [
             (
-                read_csv,
-                [{"csv_file": self.csv_relperm}, {"csv_file": self.csv_reference},],
+                get_table_df,
+                [{"csv_table": self.csv_relperm}, {"csv_table": self.csv_reference},],
             )
         ]
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-@webvizstore
-def read_csv(csv_file) -> pd.DataFrame:
-    return pd.read_csv(csv_file, index_col=None)

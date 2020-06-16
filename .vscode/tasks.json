@@ -13,6 +13,15 @@
             "problemMatcher": []
         },
         {
+            "label": "black current file",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "black ${file}",
+            "problemMatcher": []
+        },
+        {
             "label": "pylint project",
             "type": "shell",
             "options": {
@@ -30,6 +39,17 @@
                 "cwd": "${workspaceFolder}"
             },
             "command": "pylint ${file}",
+            "problemMatcher": [
+                "$eslint-stylish"
+            ]
+        },
+        {
+            "label": "flake8 current file",
+            "type": "shell",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "command": "flake8 ${file}",
             "problemMatcher": [
                 "$eslint-stylish"
             ]

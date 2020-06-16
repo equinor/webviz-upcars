@@ -13,6 +13,7 @@ shared_settings:
   # Path to csv tables generated using swof2csv tool
   krpc_csv_tables:
     Ensembles:  ./ensembles/share/results/tables/relperm.csv
+    ref_case: ./refcase/relperm.csv
     iter-0:  ./ensembles/realization-31/iter-0/share/results/tables/relperm.csv
     iter-1: ./ensembles/realization-4/iter-1/share/results/tables/relperm.csv
     iter-2: ./ensembles/realization-56/iter-2/share/results/tables/relperm.csv
@@ -28,3 +29,4 @@ pages:
       y_axis: [FOPR, FOSAT, FWCT, FPR]
       reference_cases: [ref_case, iter-0, iter-1, iter-2, iter-3]
       krpc_references: [iter-0, iter-1, iter-2, iter-3]
+      # krpc_references: [ref_case, iter-0, iter-1, iter-2, iter-3]
