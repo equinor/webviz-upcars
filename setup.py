@@ -19,7 +19,12 @@ setup(
             "UpCaRsCovan = webviz_upcars.plugins:UpCaRsCovan",
         ]
     },
-    install_requires=["webviz-config>=0.0.40","webviz-subsurface", "libecl", "fmu-ensemble"],
+    install_requires=[
+        "webviz-config>=0.0.40",
+        "webviz-subsurface",
+        "libecl",
+        "fmu-ensemble",
+    ],
     tests_require=TESTS_REQUIRE,
     extras_require={"tests": TESTS_REQUIRE},
     setup_requires=["setuptools_scm~=3.2"],

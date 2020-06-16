@@ -1,13 +1,10 @@
 import itertools
 from collections import namedtuple
 from random import random
-import pandas as pd
 import dash_html_components as html
 import dash_core_components as dcc
 from dash.dependencies import Input, Output, State
 from webviz_config import WebvizPluginABC
-from webviz_config.webviz_store import webvizstore
-from webviz_config.common_cache import CACHE
 
 import plotly.graph_objs as go
 import webviz_core_components as wcc
@@ -18,12 +15,12 @@ from webviz_subsurface._abbreviations.reservoir_simulation import (
 )
 
 from .._util.palette import PALETTE
-
-try:
-    from fmu.ensemble import EnsembleSet, ScratchEnsemble
-    from ecl.summary import EclSum
-except ImportError:
-    pass
+from .._util.fmu_input import (
+    get_table_df,
+    get_ensemble_df,
+    get_summary_df,
+    get_multiple_table_df,
+)
 
 TERMINALCOLORS = {
     "HEADER": "\033[95m",
@@ -74,67 +71,6 @@ def create_trace_dict(values, label, style, axis_idx, showlegend=False):
         "line": {"color": style.color, "width": 2.0},
         "marker": {"size": 0 if showlegend else 10},
     }
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-@webvizstore
-def get_ensemble_df(ensemble_path: tuple, column_keys: tuple) -> pd.DataFrame:
-    ensset = load_ensemble_set(ensemble_path)
-    data_frame = ensset.get_smry(column_keys=column_keys)
-    data_frame["DAYS"] = data_frame["YEARS"] * 365.25
-    return data_frame
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-@webvizstore
-def get_summary_df(case_paths: tuple, column_keys: tuple) -> pd.DataFrame:
-    smrylist = []
-    for case_name, case_path in case_paths:
-        smry = EclSum(
-            case_path.replace(".DATA", ".SMSPEC"),
-            include_restart=False,
-            lazy_load=False,
-        ).pandas_frame(None, column_keys)
-        smry.insert(0, "REAL", 0)
-        smry.insert(0, "ENSEMBLE", case_name)
-
-        smrylist.append(smry)
-    if smrylist:
-        data_frame = pd.concat(smrylist, sort=False)
-        data_frame = data_frame.loc[:, ~data_frame.columns.duplicated()]
-        data_frame["DAYS"] = data_frame["YEARS"] * 365.25
-        return data_frame
-    return pd.DataFrame()
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-@webvizstore
-def get_table_df(csv_table: tuple) -> pd.DataFrame:
-    if csv_table is None:
-        return pd.DataFrame()
-    return pd.read_csv(csv_table)
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-@webvizstore
-def get_multiple_table_df(tables: tuple) -> pd.DataFrame:
-    table_list = []
-    for name, path in tables:
-        table = pd.read_csv(path)
-        table.insert(0, "REAL", 0)
-        table.insert(0, "ENSEMBLE", name)
-        table_list.append(table)
-    if table_list:
-        return pd.concat(table_list, sort=False)
-    return pd.DataFrame()
-
-
-@CACHE.memoize(timeout=CACHE.TIMEOUT)
-def load_ensemble_set(ensemble_paths: tuple):
-    return EnsembleSet(
-        "EnsembleSet",
-        [ScratchEnsemble(ens_name, ens_path) for ens_name, ens_path in ensemble_paths],
-    )
 
 
 def krpc_table_key(table_type):
