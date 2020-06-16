@@ -1,0 +1,137 @@
+name: webviz-upcars
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+  release:
+    types:
+      - published
+  schedule:
+    # Run CI daily and check that tests are working with latest dependencies
+    - cron:  '0 0 * * *'
+
+jobs:
+  webviz-upcars:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8']
+        pandas-version: ['0.24.2', '1.*']  # Necessary as long as RHEL6 is used internally
+        exclude:
+          # Skip Python 3.8 and Pandas 0.24.2 combination due to missing 3.8 wheel for that specific pandas version
+          - python-version: '3.8'
+            pandas-version: '0.24.2'
+
+    steps:
+
+    - name: 🧹 Remove unused pre-installed software
+      run: |
+        # https://github.com/actions/virtual-environments/issues/751
+        # https://github.com/actions/virtual-environments/issues/709
+        sudo apt-get purge p7zip* yarn ruby-full zulu-*-azure-jdk* ghc* php7*
+        sudo apt-get autoremove
+        sudo apt-get clean
+        df -h
+
+    - name: 📖 Checkout commit locally
+      uses: actions/checkout@v2
+
+    - name: 🐍 Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v1
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 📦 Install webviz-upcars with dependencies
+      run: |
+        pip install --upgrade pip
+        pip install 'pandas==${{ matrix.pandas-version }}'
+        pip install .
+
+    - name: 📦 Install test dependencies
+      run: |
+        pip install .[tests]
+        pip install dash[testing]
+        wget https://chromedriver.storage.googleapis.com/$(wget https://chromedriver.storage.googleapis.com/LATEST_RELEASE -q -O -)/chromedriver_linux64.zip
+        unzip chromedriver_linux64.zip
+        export PATH=$PATH:$PWD
+
+    - name: 🧾 List all installed packages
+      run: pip freeze
+
+    - name: 🕵️ Check code style & linting
+      if: matrix.pandas-version == '1.*'
+      run: |
+        black --check webviz_upcars setup.py
+        pylint webviz_upcars setup.py
+        bandit -r -c ./bandit.yml webviz_upcars setup.py
+
+    - name: 🤖 Run tests
+      run: |
+        webviz certificate
+        # pytest ./tests --headless
+        git clone https://github.com/equinor/webviz-config.git
+        pushd ./webviz-config/docs
+        python build_docs.py
+        popd
+
+    # - name: 🐳 Build Docker example image
+    #   run: |
+    #     pip install webviz-config-equinor
+    #     webviz build ./webviz-upcars/webviz_examples/full_demo.yaml --portable ./example_subsurface_app --theme equinor
+    #     rm -rf ./webviz-upcars-testdata
+    #     pushd example_subsurface_app
+    #     # Related to https://github.com/equinor/webviz-config/issues/150:
+    #     echo "RUN pip install --user git+https://github.com/${{ github.repository }}.git@${{ github.ref }}" >> Dockerfile
+    #     # fmu-ensemble currently miss libecl dependency
+    #     echo "RUN pip install --user libecl" >> Dockerfile
+    #     docker build -t webviz/example_subsurface_image:equinor-theme .
+    #     popd
+
+    # - name: 🐳 Update Docker Hub example image
+    #   if: github.event_name != 'schedule' && github.ref == 'refs/heads/master' && matrix.python-version == '3.6' && matrix.pandas-version == '1.*'
+    #   run: |
+    #     echo ${{ secrets.dockerhub_webviz_token }} | docker login --username webviz --password-stdin
+    #     docker push webviz/example_subsurface_image:equinor-theme
+
+    # - name: 🐳 Update review/test Docker example image
+    #   if: github.ref != 'refs/heads/master' && contains(github.event.head_commit.message, '[deploy test]') && matrix.python-version == '3.6' && matrix.pandas-version == '1.*'
+    #   run: |
+    #     docker tag webviz/example_subsurface_image:equinor-theme ${{ secrets.review_docker_registry_url }}/${{ secrets.review_container_name }}
+
+    #     echo ${{ secrets.review_docker_registry_token }} | docker login ${{ secrets.review_docker_registry_url }} --username ${{ secrets.review_docker_registry_username }} --password-stdin
+    #     docker push ${{ secrets.review_docker_registry_url }}/${{ secrets.review_container_name }}
+
+    # - name: 🚢 Build and deploy Python package
+    #   if: github.event_name == 'release' && matrix.python-version == '3.6' && matrix.pandas-version == '1.*'
+    #   env:
+    #     TWINE_USERNAME: __token__
+    #     TWINE_PASSWORD: ${{ secrets.pypi_webviz_token }}
+    #   run: |
+    #     python -m pip install --upgrade setuptools wheel twine
+    #     python setup.py sdist bdist_wheel
+    #     twine upload dist/*
+
+    # - name: 📚 Update GitHub pages
+    #   if: github.event_name != 'schedule' && github.ref == 'refs/heads/master' && matrix.python-version == '3.6' && matrix.pandas-version == '1.*'
+    #   run: |
+    #     cp -R ./webviz-config/docs/_build ../_build
+
+    #     git config --local user.email "webviz-github-action"
+    #     git config --local user.name "webviz-github-action"
+    #     git fetch origin gh-pages
+    #     git checkout --track origin/gh-pages
+    #     git clean -f -f -d -x
+    #     git rm -r *
+
+    #     cp -R ../_build/* .
+
+    #     git add .
+
+    #     if git diff-index --quiet HEAD; then
+    #       echo "No changes in documentation. Skip documentation deploy."
+    #     else
+    #       git commit -m "Update Github Pages"
+    #       git push "https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" gh-pages
+    #     fi

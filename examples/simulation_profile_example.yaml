@@ -1,0 +1,32 @@
+title: Test of Webviz plugins for UpCaRs project
+
+shared_settings:
+  # Path to individual Eclipse simulation case
+  realizations:
+    # ref_case: /mnt/c/home_office/webviz/webviz-upcars/examples/ensembles/realization-4/iter-0/eclipse/model/14_R04_RUN3_0-4.DATA
+    ref_case: ./refcase/REF_CASE.SMSPEC
+    iter-0: ./ensembles/realization-31/iter-0/eclipse/model/14_R04_RUN3_0-31.SMSPEC
+    iter-1: ./ensembles/realization-4/iter-1/eclipse/model/14_R04_RUN3_0-4.SMSPEC
+    iter-2: ./ensembles/realization-56/iter-2/eclipse/model/14_R04_RUN3_0-56.SMSPEC
+    iter-3: ./ensembles/realization-12/iter-3/eclipse/model/14_R04_RUN3_0-12.SMSPEC
+    
+  # Path to csv tables generated using swof2csv tool
+  krpc_csv_tables:
+    Ensembles:  ./ensembles/share/results/tables/relperm.csv
+    ref_case: ./refcase/relperm.csv
+    iter-0:  ./ensembles/realization-31/iter-0/share/results/tables/relperm.csv
+    iter-1: ./ensembles/realization-4/iter-1/share/results/tables/relperm.csv
+    iter-2: ./ensembles/realization-56/iter-2/share/results/tables/relperm.csv
+    iter-3: ./ensembles/realization-12/iter-3/share/results/tables/relperm.csv
+
+pages:
+- title: Simulation Profile
+  content:
+  - This plugin visualizes SCAL tables (relative permeability, capillary pressure and fractional flow) and their corresponding Eclipse response. It is possible to choose any parameters as X-axis.
+  - '# Example showing different realizations'
+  - UpCaRsSimulationProfile:
+      x_axis: FUPVINJ
+      y_axis: [FOPR, FOSAT, FWCT, FPR]
+      reference_cases: [ref_case, iter-0, iter-1, iter-2, iter-3]
+      #krpc_references: [iter-0, iter-1, iter-2, iter-3]
+      krpc_references: [ref_case, iter-0, iter-1, iter-2, iter-3]
