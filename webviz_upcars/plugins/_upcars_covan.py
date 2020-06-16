@@ -16,7 +16,9 @@ class UpCaRsCovan(WebvizPluginABC):
 
     def __init__(
         # self, app, csv_relperm: Path = None, csv_reference: Path = None,
-        self, csv_relperm: Path = None, csv_reference: Path = None,
+        self,
+        csv_relperm: Path = None,
+        csv_reference: Path = None,
     ):
         super().__init__()
         self.csv_relperm = csv_relperm
