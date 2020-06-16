@@ -7,7 +7,6 @@ from plotly.subplots import make_subplots
 from .._util.fmu_input import get_table_df
 
 
-
 class UpCaRsCovan(WebvizPluginABC):
     """### Plot for Linearized Co-variance analysis
 

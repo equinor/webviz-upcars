@@ -266,29 +266,12 @@ def toggle_relperm_axis(figure, semilog):
         figure["layout"]["yaxis"]["type"] = "linear"
     return figure
 
-<<<<<<< HEAD
-=======
-# from ._upcars_udf import *
-from ._upcars_udf import (
-    bcolors,
-    create_trace_dict,
-    krpc_table_key,
-    get_table_df,
-    get_multiple_table_df,
-    get_ensemble_df,
-    get_summary_df,
-)
-
->>>>>>> 943d50f956c51e08a9f9f9fcd7e843971f8a0537
 
 def warning(message):
     print(f"{TERMINALCOLORS['WARNING']}{message}{TERMINALCOLORS['ENDC']}")
 
 
-<<<<<<< HEAD
 # pylint:disable=too-many-instance-attributes
-=======
->>>>>>> 943d50f956c51e08a9f9f9fcd7e843971f8a0537
 class UpCaRsSimulationProfile(WebvizPluginABC):
     """
     Webviz plugin for displaying relative permeability and capillary pressure
@@ -404,15 +387,9 @@ class UpCaRsSimulationProfile(WebvizPluginABC):
             else:
                 self.df_ref_krpc = None
 
-<<<<<<< HEAD
             if krpc_ensembles:
                 self.krpc_csv_tables = shared_settings["krpc_csv_tables"][
                     krpc_ensembles
-=======
-            if self.krpc_ensembles:
-                self.krpc_csv_tables = self.shared_settings["krpc_csv_tables"][
-                    self.krpc_ensembles
->>>>>>> 943d50f956c51e08a9f9f9fcd7e843971f8a0537
                 ]
                 self.df_ens_krpc = get_table_df(self.krpc_csv_tables)
                 # Create Iter column based on ENSEMBLE column

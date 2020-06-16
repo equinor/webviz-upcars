@@ -28,5 +28,5 @@ pages:
       x_axis: FUPVINJ
       y_axis: [FOPR, FOSAT, FWCT, FPR]
       reference_cases: [ref_case, iter-0, iter-1, iter-2, iter-3]
-      krpc_references: [iter-0, iter-1, iter-2, iter-3]
-      # krpc_references: [ref_case, iter-0, iter-1, iter-2, iter-3]
+      #krpc_references: [iter-0, iter-1, iter-2, iter-3]
+      krpc_references: [ref_case, iter-0, iter-1, iter-2, iter-3]

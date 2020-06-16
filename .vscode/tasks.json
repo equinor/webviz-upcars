@@ -64,14 +64,6 @@
             ]
         },
         {
-            "label": "bandit",
-            "type": "shell",
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "command": "bandit -r -c ./bandit.yml webviz_upcars setup.py"
-        },
-        {
             "label": "webviz",
             "type": "shell",
             "options": {
@@ -97,7 +89,6 @@
             },
             "command": "webviz build ./examples/simulation_profile_example.yaml --theme equinor",
             "problemMatcher": []
-        },
-
+        }
     ]
 }
